@@ -1,12 +1,17 @@
 extern crate graceful;
 
-use std::sync::atomic::{ATOMIC_BOOL_INIT, AtomicBool, Ordering};
-use std::time::Duration;
-use std::thread;
+use std::sync::atomic::{AtomicBool, Ordering};
 
+use std::thread;
+use std::time::Duration;
 use graceful::SignalGuard;
 
-static STOP: AtomicBool = ATOMIC_BOOL_INIT;
+#[macro_use]
+extern crate lazy_static;
+
+lazy_static! {
+    static ref STOP: AtomicBool = AtomicBool::new(false);
+}
 
 fn main() {
     let signal_guard = SignalGuard::new();

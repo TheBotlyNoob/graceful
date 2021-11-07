@@ -89,21 +89,30 @@ mod platform {
 }
 
 #[cfg(windows)]
+#[macro_use]
+extern crate lazy_static;
+
+#[cfg(windows)]
 mod platform {
     extern crate winapi;
-    extern crate kernel32;
 
-    use std::sync::mpsc::{sync_channel, SyncSender, Receiver};
+    use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
+    use std::sync::Mutex;
 
-    use kernel32::SetConsoleCtrlHandler;
-    use winapi::{BOOL, DWORD, TRUE};
+    use self::winapi::shared::minwindef::{BOOL, DWORD, TRUE};
+    use self::winapi::um::consoleapi::SetConsoleCtrlHandler;
 
-    static CHAN: (SyncSender<DWORD>, Receiver<DWORD>) = sync_channel(0);
+    lazy_static! {
+        static ref CHAN: (SyncSender<DWORD>, Mutex<Receiver<DWORD>>) = {
+            let channel = sync_channel(0);
+            (channel.0, Mutex::new(channel.1))
+        };
+    }
 
     unsafe extern "system" fn handler(event: DWORD) -> BOOL {
-        CHAN.0.send(event);
-        CHAN.0.send(0);
-        FALSE
+        CHAN.0.send(event).unwrap();
+        CHAN.0.send(0).unwrap();
+        TRUE
     }
 
     pub struct SignalGuard;
@@ -115,9 +124,12 @@ mod platform {
         }
 
         pub fn at_exit<F: FnOnce(usize)>(&self, handler: F) {
-            let event = CHAN.1.recv().unwrap();
+            let event = {
+                let receiver = CHAN.1.lock().unwrap();
+                receiver.recv().unwrap()
+            };
             handler(event as usize);
-            CHAN.1.recv().unwrap();
+            CHAN.1.lock().unwrap().recv().unwrap();
         }
     }
 }

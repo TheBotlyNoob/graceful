@@ -8,7 +8,7 @@ keywords = ["graceful", "shutdown", "signal"]
 description = "Gracefully shutdown"
 documentation = "http://0x1997.github.io/graceful"
 homepage = "https://github.com/0x1997/graceful"
-repository = "https://github.com/0x1997/graceful.git"
+repository = "https://github.com/TheBotlyNoob/graceful.git"
 readme = "README.md"
 exclude = [".gitignore", ".github/**/*"]
 
